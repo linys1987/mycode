@@ -4,6 +4,9 @@ import urllib2
 # import time
 
 '''
+youtube视频是itag对应表
+参考来源: http://en.wikipedia.org/wiki/YouTube#Quality_and_codecs
+本程序主要下载22 MP4 720P格式的视频
 5    FLV    240p    Sorenson H.263    N/A    0.25    MP3    64
 17    3GP    144p    MPEG-4 Visual    Simple    0.05    AAC    24
 18    MP4    360p    H.264    Baseline    0.5    AAC    96
@@ -30,9 +33,11 @@ QUALITY_MAP ={5 : 'FLV 240P',
               100 : 'WebM 360P'}
 
 def get_video_info(vid):
+    '''通过get_video_info加视频ID的方式获取视频信息'''
     DEFAULT_URL = r'http://youtube.com/get_video_info?video_id='
     url = DEFAULT_URL + vid
-
+    
+    #开启http的代理模式以供调试使用
     proxy_handler = urllib2.ProxyHandler({"http" : '127.0.0.1:8087'})
     opener = urllib2.build_opener(proxy_handler)
     urllib2.install_opener(opener)
