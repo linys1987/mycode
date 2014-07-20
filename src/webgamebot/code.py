@@ -284,7 +284,7 @@ def buyFood(food):
     (33, 30, 11) b_nori unavailable
     (127, 61, 0) fishegg unavailable
     (127, 71, 47) salmon unavailable
-            根据该点的rgb值判断是否有钱进行购买
+    根据该点的rgb值判断是否有钱进行购买
     '''
     if food == 'rice':
         mousePos(Cord.b_phone)
