@@ -1,7 +1,6 @@
 # encoding: utf-8
 import urlparse
 import urllib2
-# import time
 
 '''
 youtube视频是itag对应表
@@ -51,10 +50,12 @@ def get_video_info(vid):
 def get_download_url(data):
     if isinstance(data, str):
         content = urlparse.parse_qs(data)
+        
         # 判断是否正确获取video_info
         if 'status' in content and content['status'] == ['fail']:
             print 'Reason:', content['reason'][0]
             return -1
+        
         # 格式化url_encoded_fmt_stream_map获取各版本视频下载链接
         url_encoded_fmt_stream_map = str(content['url_encoded_fmt_stream_map'])
         url_map = urlparse.parse_qs(url_encoded_fmt_stream_map)
@@ -90,18 +91,7 @@ def download_video(url, title):
         status = r"%10d" % file_size_dl
         status = str(round(int(status)/1024.0/1024.0, 1)) + 'MB  ' + '>'*int(file_size_dl*100.0/file_size)+' %3.2f%%' % (file_size_dl * 100. / file_size)
         print status
-
     f.close()
 
 a = get_download_url(get_video_info('LGtwHqXbR_k'))
 download_video(a['22'], a['title'])
-
-# b=open('get_video_info', 'r')
-# b = b.read()
-# a = urlparse.parse_qs(b)
-
-# c = urlparse.parse_qs(str(a['url_encoded_fmt_stream_map']))
-
-
-# for item in c:
-#     print item, c[item]
