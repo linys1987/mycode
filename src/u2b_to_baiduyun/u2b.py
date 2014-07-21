@@ -1,4 +1,9 @@
 # encoding: utf-8
+# create 2014年7月19日
+# filename: u2b.py
+# version: 1.0
+# author: linys1987@gmail.com
+
 import urlparse
 import urllib2
 
@@ -72,6 +77,10 @@ def get_download_url(data):
             print 'Bad data, try again.'
 
 def download_video(url, title):
+    '''下载视频并显示进度
+    url: 视频下载链接
+    title: 视频标题
+    '''
     file_name = title.replace('|', '').replace(';', ' ') + '.mp4'
     u = urllib2.urlopen(url)
     f = open(file_name, 'wb')
@@ -80,7 +89,7 @@ def download_video(url, title):
     print "Downloading: %s Bytes: %s" % (file_name, file_size)
     
     file_size_dl = 0
-    block_sz = 1024*8*8
+    block_sz = 1024 * 8 * 8
     while True:
         buffer_block = u.read(block_sz)
         if not buffer_block:
@@ -92,6 +101,7 @@ def download_video(url, title):
         status = str(round(int(status)/1024.0/1024.0, 1)) + 'MB  ' + '>'*int(file_size_dl*100.0/file_size)+' %3.2f%%' % (file_size_dl * 100. / file_size)
         print status
     f.close()
-
-a = get_download_url(get_video_info('LGtwHqXbR_k'))
-download_video(a['22'], a['title'])
+    
+if __name__ == '__main__':
+    a = get_download_url(get_video_info('LGtwHqXbR_k'))
+    download_video(a['22'], a['title'])
