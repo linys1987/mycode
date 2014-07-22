@@ -15,16 +15,17 @@ oauth_token_secret = r'84ce4479edf74487b2eb3207e137bdc0'
 oauth_token = r'04493d217ca5799c627c73df'
 default_url = r'http://youtube.com/get_video_info?video_id='
 quality_map = {5 : 'FLV 240P', 
-                      17 : '3GP 1440',
-                      18 : 'MP4 360P',
-                      22 : 'MP4 720P',
-                      36 : '3GP 240P',
-                      43 : 'WebM 360P',
-                      82 : 'MP4 360P',
-                      83 : 'MP4 240P',
-                      84 : 'MP4 720P',
-                      85 : 'MP4 1080P',
-                      100 : 'WebM 360P'}
+               17 : '3GP 1440',
+               18 : 'MP4 360P',
+               22 : 'MP4 720P',
+               36 : '3GP 240P',
+               43 : 'WebM 360P',
+               82 : 'MP4 360P',
+               83 : 'MP4 240P',
+               84 : 'MP4 720P',
+               85 : 'MP4 1080P',
+               100 : 'WebM 360P'
+               }
 
 class U2b(object):
     '''
