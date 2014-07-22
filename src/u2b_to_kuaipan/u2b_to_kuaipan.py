@@ -5,14 +5,25 @@
 # author: linyi1987@gmail.com
 
 import urlparse
-import urllib2
 import oauth2 as oauth
 import json
+from poster.encode import multipart_encode
+from poster.streaminghttp import register_openers
+import urllib2
+import requests
 
 consumer_key = r'xcurFwFZzzEFFQ9H'
 consumer_secret = r'CN4kIlggsjKZaevY'
-oauth_token_secret = r'84ce4479edf74487b2eb3207e137bdc0'
+
 oauth_token = r'04493d217ca5799c627c73df'
+oauth_token_secret = r'84ce4479edf74487b2eb3207e137bdc0'
+
+from_mail_address = ''
+to_mail_address = ''
+mail_password = ''
+phone_number = ''
+phone_password = ''
+
 default_url = r'http://youtube.com/get_video_info?video_id='
 quality_map = {5 : 'FLV 240P', 
                17 : '3GP 1440',
@@ -142,7 +153,8 @@ class KuaiPanAuth(object):
         self.consumer_key = consumer_key
         self.consumer_secret = consumer_secret
     
-    def str_to_dict(self, string):
+    @staticmethod
+    def str_to_dict(string):
         '''将字符串转换为字典'''
         string = string.replace('\'', '"')
         string = json.loads(string)
@@ -195,3 +207,88 @@ class KuaiPan(object):
     def __init__(self):
         self.oauth_token_secret = oauth_token_secret
         self.oauth_token = oauth_token
+        self.token = oauth.Token(oauth_token, oauth_token_secret)
+        self.consumer = oauth.Consumer(consumer_key, consumer_secret)
+        self.signature_method_hmac_sha1 = oauth.SignatureMethod_HMAC_SHA1()
+    
+    def get_oauth_url(self, url, method='GET', parameters=None):
+        '''获取upload地址'''
+        oauth_request = oauth.Request.from_consumer_and_token(self.consumer,
+                                                                    token=self.token,
+                                                                    http_method=method,
+                                                                    http_url=url,
+                                                                    parameters=parameters,
+                                                                    is_form_encoded=True)
+        oauth_request.sign_request(self.signature_method_hmac_sha1, self.consumer, self.token)
+        # print oauth_request.to_url()
+        return oauth_request.to_url()
+    
+    def get_upload_locate(self):
+        '''获取上传url'''
+        default_url = r'http://api-content.dfs.kuaipan.cn/1/fileops/upload_locate'
+        content = urllib2.urlopen(default_url)
+        resp, text = content.code, content.read()
+        if resp == 200:
+            result = KuaiPanAuth.str_to_dict(text)
+            return result
+        else:
+            print 'Get upload locate fail:'
+            print content.read()
+            
+    def upload_file(self, filelocate, forceoverwrite=True):
+        '''上传文件'''
+        register_openers()
+        url = self.get_upload_locate()['url'] + r'1/fileops/upload_file'
+        parameters = {'path': filelocate,
+                      'root': 'app_folder',
+                      'overwrite' : forceoverwrite
+                      }
+        upload_url = self.get_oauth_url(url, method='POST', parameters=parameters)
+        datagen, headers = multipart_encode({filelocate: open(filelocate, 'rb')})
+        try:
+            request = urllib2.Request(upload_url, datagen, headers)
+            content = urllib2.urlopen(request)
+            if content.code == 200:
+                print 'Upload %s successed.' % filelocate
+                return content.code
+            else:
+                print 'Upload failed.'
+                return content.code
+        except Exception as e:
+            print 'Upload failed.'
+            print e
+            
+class Notification(object):
+    
+    def __init__(self):
+        self.from_mail_address = from_mail_address
+        self.to_mail_address = to_mail_address
+        self.phone_number = phone_number
+        self.phone_password = phone_password
+        self.mail_password = mail_password
+        
+    def send_msg(self, msg):
+        '''使用飞信短信接口发送信息提醒'''
+        url_space_login = 'http://f.10086.cn/huc/user/space/login.do?m=submit&fr=space'
+        url_login = 'http://f.10086.cn/im/login/cklogin.action'
+        url_sendmsg = 'http://f.10086.cn/im/user/sendMsgToMyselfs.action'
+        parameter= { 'mobilenum':self.phone_number, 'password':self.phone_password}
+        
+        session = requests.Session()
+        session.post(url_space_login, data = parameter)
+        session.get(url_login)
+        session.post(url_sendmsg, data = {'msg':msg})
+        
+    def send_mail(self, subject, msg):
+        '''使用网易邮箱发送邮件提醒'''
+        import smtplib
+        from email.mime.text import MIMEText
+        msg = MIMEText(msg, _charset='UTF-8')
+        msg['Subject'] = subject
+        msg['From'] = self.from_mail_address
+        msg['To'] = self.to_mail_address
+        
+        smail = smtplib.SMTP('smtp.163.com')
+        smail.login(self.from_mail_address, self.mail_password)
+        smail.sendmail(self.from_mail_address, [self.to_mail_address], msg.as_string())
+        smail.quit()

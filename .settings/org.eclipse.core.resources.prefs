@@ -1,8 +1,5 @@
 eclipse.preferences.version=1
 encoding//src/stockmon/stockmon.py=utf-8
-encoding//src/u2b_to_kuaipan/Kuaipan.py=utf-8
-encoding//src/u2b_to_kuaipan/kuaipan_lin.py=utf-8
-encoding//src/u2b_to_kuaipan/u2b.py=utf-8
 encoding//src/u2b_to_kuaipan/u2b_to_kuaipan.py=utf-8
 encoding//src/webgamebot/code.py=utf-8
 encoding//src/webgamebot/quickGrab.py=utf-8
