@@ -11,18 +11,25 @@ from poster.encode import multipart_encode
 from poster.streaminghttp import register_openers
 import urllib2
 import requests
+import smtplib
+from email.mime.text import MIMEText
 
-consumer_key = r'xcurFwFZzzEFFQ9H'
-consumer_secret = r'CN4kIlggsjKZaevY'
 
-oauth_token = r'04493d217ca5799c627c73df'
-oauth_token_secret = r'84ce4479edf74487b2eb3207e137bdc0'
+# 读取配置文件
+import ConfigParser
 
-from_mail_address = ''
-to_mail_address = ''
-mail_password = ''
-phone_number = ''
-phone_password = ''
+config = ConfigParser.ConfigParser()
+config.readfp(open(r'config.ini'))
+consumer_key = config.get('consumer', 'consumer_key')
+consumer_secret = config.get('consumer', 'consumer_secret')
+oauth_token = config.get('token', 'oauth_token')
+oauth_token_secret = config.get('token', 'oauth_token_secret')
+
+from_mail_address = config.get('mail', 'from_mail_address')
+to_mail_address = config.get('mail', 'to_mail_address')
+mail_password = config.get('mail', 'mail_password')
+phone_number = config.get('mail', 'phone_number')
+phone_password = config.get('mail', 'phone_password')
 
 default_url = r'http://youtube.com/get_video_info?video_id='
 quality_map = {5 : 'FLV 240P', 
@@ -281,8 +288,7 @@ class Notification(object):
         
     def send_mail(self, subject, msg):
         '''使用网易邮箱发送邮件提醒'''
-        import smtplib
-        from email.mime.text import MIMEText
+
         msg = MIMEText(msg, _charset='UTF-8')
         msg['Subject'] = subject
         msg['From'] = self.from_mail_address
