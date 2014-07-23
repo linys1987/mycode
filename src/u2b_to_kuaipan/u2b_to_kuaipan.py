@@ -14,7 +14,6 @@ import requests
 import smtplib
 from email.mime.text import MIMEText
 
-
 # 读取配置文件
 import ConfigParser
 
@@ -28,8 +27,8 @@ oauth_token_secret = config.get('token', 'oauth_token_secret')
 from_mail_address = config.get('mail', 'from_mail_address')
 to_mail_address = config.get('mail', 'to_mail_address')
 mail_password = config.get('mail', 'mail_password')
-phone_number = config.get('mail', 'phone_number')
-phone_password = config.get('mail', 'phone_password')
+phone_number = config.get('phone', 'phone_number')
+phone_password = config.get('phone', 'phone_password')
 
 default_url = r'http://youtube.com/get_video_info?video_id='
 quality_map = {5 : 'FLV 240P', 
@@ -65,10 +64,10 @@ class U2b(object):
     def __init__(self):
         self.quality_map = quality_map
         self.default_url = default_url
-        
+         
     def get_video_id(self, url):
-        import re
         '''获取youtube视频id'''
+        import re        
         url_match = r'https?://www\.youtube\.com/watch\?v=(.*)'
         vid = re.search(url_match, url)
         if vid:
@@ -78,18 +77,17 @@ class U2b(object):
         else:
             print 'Bad url, check again.'
             return False
-        
-    
+
     def get_video_info(self, vid):
         '''通过get_video_info加视频ID的方式获取视频信息'''
         url = self.default_url + vid
-    
+
         try:
             data = urllib2.urlopen(url, timeout=5).read()
             return data
         except Exception as e:
             return e
-        
+
     def set_up_proxy(self, enable=True):
         #开启http的代理模式以供调试使用
         if enable:
@@ -100,7 +98,7 @@ class U2b(object):
             proxy_handler = urllib2.ProxyHandler({})
             opener = urllib2.build_opener(proxy_handler)
             urllib2.install_opener(opener)
-    
+
     def get_download_url(self, data):
         '''获取视频下载url'''
         if isinstance(data, str):
@@ -131,7 +129,7 @@ class U2b(object):
         url: 视频下载链接
         title: 视频标题
         '''
-        file_name = title.replace('|', '').replace(';', ' ') + '.mp4'
+        file_name = title.replace('|', '').replace(';', '').replace(' ', '') + '.mp4'
         u = urllib2.urlopen(url)
         f = open(file_name, 'wb')
         meta = u.info()
@@ -232,8 +230,8 @@ class KuaiPan(object):
     
     def get_upload_locate(self):
         '''获取上传url'''
-        default_url = r'http://api-content.dfs.kuaipan.cn/1/fileops/upload_locate'
-        content = urllib2.urlopen(default_url)
+        default_get_url = r'http://api-content.dfs.kuaipan.cn/1/fileops/upload_locate'
+        content = urllib2.urlopen(default_get_url)
         resp, text = content.code, content.read()
         if resp == 200:
             result = KuaiPanAuth.str_to_dict(text)
@@ -247,7 +245,7 @@ class KuaiPan(object):
         register_openers()
         url = self.get_upload_locate()['url'] + r'1/fileops/upload_file'
         parameters = {'path': filelocate,
-                      'root': 'app_folder',
+                      'root': 'root',
                       'overwrite' : forceoverwrite
                       }
         upload_url = self.get_oauth_url(url, method='POST', parameters=parameters)
@@ -264,37 +262,46 @@ class KuaiPan(object):
         except Exception as e:
             print 'Upload failed.'
             print e
-            
-class Notification(object):
+        
+def send_msg(msg):
+    '''使用飞信短信接口发送信息提醒'''
+    url_space_login = 'http://f.10086.cn/huc/user/space/login.do?m=submit&fr=space'
+    url_login = 'http://f.10086.cn/im/login/cklogin.action'
+    url_sendmsg = 'http://f.10086.cn/im/user/sendMsgToMyselfs.action'
+    parameter= { 'mobilenum':phone_number, 'password':phone_password}
+        
+    session = requests.Session()
+    session.post(url_space_login, data = parameter)
+    session.get(url_login)
+    session.post(url_sendmsg, data = {'msg':msg})
+        
+def send_mail(subject, msg):
+    '''使用网易邮箱发送邮件提醒'''
+    msg = MIMEText(msg, _charset='UTF-8')
+    msg['Subject'] = subject
+    msg['From'] = from_mail_address
+    msg['To'] = to_mail_address
+        
+    smail = smtplib.SMTP('smtp.163.com')
+    smail.login(from_mail_address, mail_password)
+    smail.sendmail(from_mail_address, [to_mail_address], msg.as_string())
+    smail.quit()
     
-    def __init__(self):
-        self.from_mail_address = from_mail_address
-        self.to_mail_address = to_mail_address
-        self.phone_number = phone_number
-        self.phone_password = phone_password
-        self.mail_password = mail_password
-        
-    def send_msg(self, msg):
-        '''使用飞信短信接口发送信息提醒'''
-        url_space_login = 'http://f.10086.cn/huc/user/space/login.do?m=submit&fr=space'
-        url_login = 'http://f.10086.cn/im/login/cklogin.action'
-        url_sendmsg = 'http://f.10086.cn/im/user/sendMsgToMyselfs.action'
-        parameter= { 'mobilenum':self.phone_number, 'password':self.phone_password}
-        
-        session = requests.Session()
-        session.post(url_space_login, data = parameter)
-        session.get(url_login)
-        session.post(url_sendmsg, data = {'msg':msg})
-        
-    def send_mail(self, subject, msg):
-        '''使用网易邮箱发送邮件提醒'''
+def main():
+    '''主程序'''
+    pass
 
-        msg = MIMEText(msg, _charset='UTF-8')
-        msg['Subject'] = subject
-        msg['From'] = self.from_mail_address
-        msg['To'] = self.to_mail_address
-        
-        smail = smtplib.SMTP('smtp.163.com')
-        smail.login(self.from_mail_address, self.mail_password)
-        smail.sendmail(self.from_mail_address, [self.to_mail_address], msg.as_string())
-        smail.quit()
+if __name__ == '__main__':
+    main()
+
+b = U2b()
+b.set_up_proxy(True)
+vid = b.get_video_id('https://www.youtube.com/watch?v=oZvj6dksToQ')
+data = b.get_video_info(vid)
+url_itag = b.get_download_url(data)
+b.download_video(url_itag['22'], '1234')
+
+
+
+a = KuaiPan()
+a.upload_file('1234.mp4', True)
