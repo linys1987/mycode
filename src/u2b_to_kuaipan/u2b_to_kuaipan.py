@@ -296,7 +296,7 @@ if __name__ == '__main__':
 
 b = U2b()
 b.set_up_proxy(True)
-vid = b.get_video_id('https://www.youtube.com/watch?v=oZvj6dksToQ')
+vid = b.get_video_id('https://www.youtube.com/watch?v=xg5N3LAGw4')
 data = b.get_video_info(vid)
 url_itag = b.get_download_url(data)
 b.download_video(url_itag['22'], '1234')
