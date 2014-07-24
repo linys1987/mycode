@@ -93,7 +93,7 @@ class U2b(object):
         except Exception as e:
             return e
 
-    def set_up_proxy(self, enable=True):
+    def set_up_proxy(self, enable=False):
         #开启http的代理模式以供调试使用
         if enable:
             proxy_handler = urllib2.ProxyHandler({"http" : '127.0.0.1:8087'})
@@ -105,7 +105,7 @@ class U2b(object):
             urllib2.install_opener(opener)
 
     def get_download_url(self, data):
-        '''获取视频下载url'''
+        '''获取视频下载url, 及视频标题'''
         if isinstance(data, str):
             content = urlparse.parse_qs(data)
             
@@ -124,25 +124,38 @@ class U2b(object):
                 url_itag['title'] = content['title'][0]
                 for key in url_itag:
                     print key, url_itag[key]
-                #print url_itag
                 return url_itag
             else:
                 print 'Bad data, try again.'
+                
+    def format_title(self, title):
+        pass
     
     def download_video(self, url, title):
         '''下载视频并显示进度
         url: 视频下载链接
         title: 视频标题
         '''
-        file_name = title.replace('|', '').replace(';', '').replace(' ', '') + '.mp4'
-        u = urllib2.urlopen(url)
+        file_name = (title.replace('|', '').replace(';', '').replace(' ', '')
+                     .replace(':', '').replace('_', '').replace('-', '').replace('.', '')
+                     .replace('\'', '').replace('"', '').replace('[', '').replace(']', '') 
+                     + '.mp4')
+        headers = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.11 (KHTML, like Gecko) Chrome/23.0.1271.64 Safari/537.11',
+                   'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+                   'Accept-Charset': 'ISO-8859-1,utf-8;q=0.7,*;q=0.3',
+                   'Accept-Encoding': 'none',
+                   'Accept-Language': 'en-US,en;q=0.8',
+                   'Connection': 'keep-alive'}
+        req = urllib2.Request(url, headers=headers)  
+        u = urllib2.urlopen(req)
+        print type(file_name)
         f = open(file_name, 'wb')
         meta = u.info()
         file_size = int(meta.getheaders("Content-Length")[0])
         print "Downloading: %s Bytes: %s" % (file_name, file_size)
         
         file_size_dl = 0
-        block_sz = 1024 * 8 * 8
+        block_sz = 1024 * 512
         while True:
             buffer_block = u.read(block_sz)
             if not buffer_block:
@@ -151,9 +164,14 @@ class U2b(object):
             file_size_dl += len(buffer_block)
             f.write(buffer_block)
             status = r"%10d" % file_size_dl
-            status = str(round(int(status)/1024.0/1024.0, 1)) + 'MB  ' + '>'*int(file_size_dl*100.0/file_size)+' %3.2f%%' % (file_size_dl * 100. / file_size)
-            print status
+            complete_percent = int(file_size_dl*50.0/file_size)
+            status = (str(round(int(status)/1024.0/1024.0, 1)) + 'MB\t' + '[' + '>'*complete_percent 
+                      + ' '*(50-complete_percent) + ']' + '%3.2f%%' % (file_size_dl*100.0/file_size))
+            sys.stdout.write('\r'+status)
+            sys.stdout.flush()
+        sys.stdout.write('\n')
         f.close()
+        return file_name
         
 class KuaiPanAuth(object):
     '''获取快盘token, 参考文档:
@@ -224,11 +242,11 @@ class KuaiPan(object):
     def get_oauth_url(self, url, method='GET', parameters=None):
         '''获取upload地址'''
         oauth_request = oauth.Request.from_consumer_and_token(self.consumer,
-                                                                    token=self.token,
-                                                                    http_method=method,
-                                                                    http_url=url,
-                                                                    parameters=parameters,
-                                                                    is_form_encoded=True)
+                                                              token=self.token,
+                                                              http_method=method,
+                                                              http_url=url,
+                                                              parameters=parameters,
+                                                              is_form_encoded=True)
         oauth_request.sign_request(self.signature_method_hmac_sha1, self.consumer, self.token)
         # print oauth_request.to_url()
         return oauth_request.to_url()
@@ -247,12 +265,14 @@ class KuaiPan(object):
             
     def upload_file(self, filelocate, forceoverwrite=True):
         '''上传文件'''
+        print type(filelocate)
         register_openers()
         url = self.get_upload_locate()['url'] + r'1/fileops/upload_file'
         parameters = {'path': filelocate,
                       'root': 'root',
                       'overwrite' : forceoverwrite
                       }
+        print 'Uploading %s.' % filelocate
         upload_url = self.get_oauth_url(url, method='POST', parameters=parameters)
         datagen, headers = multipart_encode({filelocate: open(filelocate, 'rb')})
         try:
@@ -294,19 +314,21 @@ def send_mail(subject, msg):
     
 def main():
     '''主程序'''
-    pass
+    url = sys.argv[1]
+    if url == '--upload':
+        kuaipan = KuaiPan()
+        file_name = sys.argv[2]
+        kuaipan.upload_file(file_name, True)
+    else:
+        u2b = U2b()
+        vid = u2b.get_video_id(url)
+        data = u2b.get_video_info(vid)
+        url_itag = u2b.get_download_url(data)
+        title = url_itag['title']
+        file_name = u2b.download_video(url_itag['22'], title)
+        kuaipan = KuaiPan()
+        kuaipan.upload_file(file_name, True)
+    
 
 if __name__ == '__main__':
     main()
-
-# b = U2b()
-# b.set_up_proxy(True)
-# vid = b.get_video_id('https://www.youtube.com/watch?v=xg5N3LAGw4')
-# data = b.get_video_info(vid)
-# url_itag = b.get_download_url(data)
-# b.download_video(url_itag['22'], '1234')
-# 
-# 
-# 
-# a = KuaiPan()
-# a.upload_file('1234.mp4', True)
