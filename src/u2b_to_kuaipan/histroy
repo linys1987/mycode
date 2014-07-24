@@ -1,0 +1,13 @@
+2014年7月21日 
+完成U2b功能. 参考资料https://github.com/rg3/youtube-dl
+完成Kuaipan验证功能. 参考资料https://github.com/deren/python-kuaipan
+部分完成Kuaipan上传功能. 参考资料https://github.com/deren/python-kuaipan
+
+2014年7月22日
+完成Kuaipan上传功能.
+
+2014年7月23日
+快盘upload api无法上传大于300m的文件, 考虑通过文件分割方法上传.
+日文字符会导致上传失败, 待查.
+
+2014年7月24日

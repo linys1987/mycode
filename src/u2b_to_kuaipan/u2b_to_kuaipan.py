@@ -299,14 +299,14 @@ def main():
 if __name__ == '__main__':
     main()
 
-b = U2b()
-b.set_up_proxy(True)
-vid = b.get_video_id('https://www.youtube.com/watch?v=xg5N3LAGw4')
-data = b.get_video_info(vid)
-url_itag = b.get_download_url(data)
-b.download_video(url_itag['22'], '1234')
-
-
-
-a = KuaiPan()
-a.upload_file('1234.mp4', True)
+# b = U2b()
+# b.set_up_proxy(True)
+# vid = b.get_video_id('https://www.youtube.com/watch?v=xg5N3LAGw4')
+# data = b.get_video_info(vid)
+# url_itag = b.get_download_url(data)
+# b.download_video(url_itag['22'], '1234')
+# 
+# 
+# 
+# a = KuaiPan()
+# a.upload_file('1234.mp4', True)
