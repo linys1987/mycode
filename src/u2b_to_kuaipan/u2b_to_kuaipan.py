@@ -193,7 +193,7 @@ class U2b(object):
             status = r"%10d" % file_size_dl
             complete_percent = int(file_size_dl*50.0/file_size)
             status = (str(round(int(status)/1024.0/1024.0, 1)) + 'MB\t' + '[' + '>'*complete_percent 
-                      + ' '*(50-complete_percent) + ']' + '%3.2f%%' % (file_size_dl*100.0/file_size))
+                      + ' '*(50-complete_percent) + ']' + '  %3.2f%%' % (file_size_dl*100.0/file_size))
             sys.stdout.write('\r'+status)
             sys.stdout.flush()
         sys.stdout.write('\n')
