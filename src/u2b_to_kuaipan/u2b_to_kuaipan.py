@@ -4,6 +4,7 @@
 # version: 1.0
 # author: linyi1987@gmail.com
 
+import sys
 import urlparse
 import oauth2 as oauth
 import json
@@ -13,6 +14,10 @@ import urllib2
 import requests
 import smtplib
 from email.mime.text import MIMEText
+
+# 配置字符编码为utf-8
+reload(sys)
+sys.setdefaultencoding('utf-8')  # @UndefinedVariable
 
 # 读取配置文件
 import ConfigParser
