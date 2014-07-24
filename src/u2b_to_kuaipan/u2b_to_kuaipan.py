@@ -6,6 +6,8 @@
 
 import sys
 import urlparse
+import time
+import re
 import oauth2 as oauth
 import json
 from poster.encode import multipart_encode
@@ -72,7 +74,6 @@ class U2b(object):
          
     def get_video_id(self, url):
         '''获取youtube视频id'''
-        import re        
         url_match = r'https?://www\.youtube\.com/watch\?v=(.*)'
         vid = re.search(url_match, url)
         if vid:
@@ -122,37 +123,63 @@ class U2b(object):
                 itag = url_map['itag']
                 url_itag = dict(zip(itag, url))
                 url_itag['title'] = content['title'][0]
-                for key in url_itag:
-                    print key, url_itag[key]
+                # for key in url_itag:
+                    # print key, url_itag[key]
                 return url_itag
             else:
                 print 'Bad data, try again.'
                 
     def format_title(self, title):
-        pass
+        '''格式化视频标题, 暂时没有更好的办法处理unicode字符'''
+        title = re.sub('[^a-zA-Z0-9]', '', title)
+        if title == '':
+            title = time.strftime('%y%m%d%H%M')
+        return title
+    
+    def get_url_title(self, data):
+        if isinstance(data, str):
+            content = urlparse.parse_qs(data)
+            
+            # 判断是否正确获取video_info
+            if 'status' in content and content['status'] == ['fail']:
+                print 'Reason:', content['reason'][0]
+                return -1
+            
+            # 格式化url_encoded_fmt_stream_map获取各版本视频下载链接
+            url_encoded_fmt_stream_map = str(content['url_encoded_fmt_stream_map'])
+            url_map = urlparse.parse_qs(url_encoded_fmt_stream_map)
+            try:
+                if 'url' in url_map and 'itag' in url_map:
+                    url = url_map['url']
+                    itag = url_map['itag']
+                    url_itag = dict(zip(itag, url))
+                    url_itag['title'] = content['title'][0]
+                    # for key in url_itag:
+                        # print key, url_itag[key]
+                    return url_itag['22'], url_itag['title']
+                else:
+                    print 'Bad data, try again.'
+                    return -2
+            except:
+                return -2
     
     def download_video(self, url, title):
         '''下载视频并显示进度
         url: 视频下载链接
         title: 视频标题
         '''
-        file_name = (title.replace('|', '').replace(';', '').replace(' ', '')
-                     .replace(':', '').replace('_', '').replace('-', '').replace('.', '')
-                     .replace('\'', '').replace('"', '').replace('[', '').replace(']', '') 
-                     + '.mp4')
-        headers = {'User-Agent': 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.11 (KHTML, like Gecko) Chrome/23.0.1271.64 Safari/537.11',
-                   'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-                   'Accept-Charset': 'ISO-8859-1,utf-8;q=0.7,*;q=0.3',
-                   'Accept-Encoding': 'none',
-                   'Accept-Language': 'en-US,en;q=0.8',
-                   'Connection': 'keep-alive'}
+        file_name = self.format_title(title) + '.mp4'
+        headers = {'Accept-Encoding':'gzip,deflate,sdch',
+                   'Accept-Language':'zh-CN,zh;q=0.8',
+                   'Connection':'keep-alive',
+                   'User-Agent':'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/36.0.1985.125 Safari/537.36'}
         req = urllib2.Request(url, headers=headers)  
         u = urllib2.urlopen(req)
-        print type(file_name)
         f = open(file_name, 'wb')
         meta = u.info()
         file_size = int(meta.getheaders("Content-Length")[0])
-        print "Downloading: %s Bytes: %s" % (file_name, file_size)
+        file_size_mb = round(file_size/1024.0/1024.0, 1)
+        print "Downloading: %s %sMB" % (file_name, file_size_mb)
         
         file_size_dl = 0
         block_sz = 1024 * 512
@@ -265,7 +292,6 @@ class KuaiPan(object):
             
     def upload_file(self, filelocate, forceoverwrite=True):
         '''上传文件'''
-        print type(filelocate)
         register_openers()
         url = self.get_upload_locate()['url'] + r'1/fileops/upload_file'
         parameters = {'path': filelocate,
@@ -314,6 +340,8 @@ def send_mail(subject, msg):
     
 def main():
     '''主程序'''
+    start = time.time()
+    count = 1
     url = sys.argv[1]
     if url == '--upload':
         kuaipan = KuaiPan()
@@ -323,11 +351,21 @@ def main():
         u2b = U2b()
         vid = u2b.get_video_id(url)
         data = u2b.get_video_info(vid)
-        url_itag = u2b.get_download_url(data)
-        title = url_itag['title']
-        file_name = u2b.download_video(url_itag['22'], title)
+        down_url, title = '', ''
+        while u2b.get_url_title(data) == -2:
+            data = u2b.get_video_info(vid)
+            if u2b.get_url_title(data) != -2:
+                down_url, title = u2b.get_url_title(data)
+            count += 1
+            if count == 5:
+                print 'Retry %d times, exit.' % count
+                return False
+        down_url, title = u2b.get_url_title(data)            
+        file_name = u2b.download_video(down_url, title)
         kuaipan = KuaiPan()
         kuaipan.upload_file(file_name, True)
+    stop = time.time()
+    print 'Cost', stop - start
     
 
 if __name__ == '__main__':
