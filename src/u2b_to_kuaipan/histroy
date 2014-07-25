@@ -13,6 +13,17 @@
 	UnicodeDecodeError: 
 	'ascii' codec can't decode byte 0xec in position 7: ordinal not in range(128)
 	
+	加入下面方法暂时删除费ascii字符, 待优化.
+    def format_title(self, title):
+        '''格式化视频标题, 暂时没有更好的办法处理unicode字符'''
+        len_origin = len(title)
+        title = re.sub('[^a-zA-Z0-9]', '', title)
+        len_new = len(title)
+        title = title + '-' + time.strftime('%y%m%d%H%M')
+        if title == '' or (len_origin-len_new)>50:
+            title = 'Rename-' + time.strftime('%y%m%d%H%M')
+        return title	
+	
 	上传失败:
 	Upload failed.
 	HTTP Error 512: File Commit Error
@@ -46,6 +57,43 @@
 	sys.stdout.write('\r'+status)
 	sys.stdout.flush()
 	sys.stdout.write('\n')
+	
+	root@linhost:/u2b# python b.py https://www.youtube.com/watch?v=xPuvcSe4YWw
+	Get video id: xPuvcSe4YWw
+	Downloading: WarlordsofDraenorWarontheHorizonWoWCommunityHypeMontage 61.1MB
+	61.1MB  [>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>]  100.00%
+	Uploading WarlordsofDraenorWarontheHorizonWoWCommunityHypeMontage.mp4.
+	
+	
+2014年7月25日
+	完成大文件的分割功能:
+	root@linhost:/u2b# python b.py https://www.youtube.com/watch?v=xPuvcSe4YWw
+	Get video id: xPuvcSe4YWw
+	Downloading: WarlordsofDraenorWarontheHorizonWoWCommunityHypeMontage 61.1MB
+	File size is 61.1MB larger than 40MB, will be divided into 6 pieces, 10MB per piece.
+	10.0MB  [>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>]  100.00%
+	10.0MB  [>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>]  100.00%
+	10.0MB  [>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>]  100.00%
+	10.0MB  [>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>]  100.00%
+	10.0MB  [>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>]  100.00%
+	10.0MB  [>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>]  100.00%
+	1.1MB   [>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>]  100.00%
+	Uploading WarlordsofDraenorWarontheHorizonWoWCommunityHypeMontage-Part0.mp4.
+	Upload WarlordsofDraenorWarontheHorizonWoWCommunityHypeMontage-Part0.mp4 successed.
+	Uploading WarlordsofDraenorWarontheHorizonWoWCommunityHypeMontage-Part1.mp4.
+	Upload WarlordsofDraenorWarontheHorizonWoWCommunityHypeMontage-Part1.mp4 successed.
+	Uploading WarlordsofDraenorWarontheHorizonWoWCommunityHypeMontage-Part2.mp4.
+	Upload WarlordsofDraenorWarontheHorizonWoWCommunityHypeMontage-Part2.mp4 successed.
+	Uploading WarlordsofDraenorWarontheHorizonWoWCommunityHypeMontage-Part3.mp4.
+	Upload WarlordsofDraenorWarontheHorizonWoWCommunityHypeMontage-Part3.mp4 successed.
+	Uploading WarlordsofDraenorWarontheHorizonWoWCommunityHypeMontage-Part4.mp4.
+	Upload WarlordsofDraenorWarontheHorizonWoWCommunityHypeMontage-Part4.mp4 successed.
+	Uploading WarlordsofDraenorWarontheHorizonWoWCommunityHypeMontage-Part5.mp4.
+	Upload WarlordsofDraenorWarontheHorizonWoWCommunityHypeMontage-Part5.mp4 successed.
+	Uploading WarlordsofDraenorWarontheHorizonWoWCommunityHypeMontage-Part6.mp4.
+	Upload WarlordsofDraenorWarontheHorizonWoWCommunityHypeMontage-Part6.mp4 successed.
+	Cost 139.5 seconds.
+	
 
 
 
