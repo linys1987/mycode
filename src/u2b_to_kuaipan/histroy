@@ -70,7 +70,7 @@
 	root@linhost:/u2b# python b.py https://www.youtube.com/watch?v=xPuvcSe4YWw
 	Get video id: xPuvcSe4YWw
 	Downloading: WarlordsofDraenorWarontheHorizonWoWCommunityHypeMontage 61.1MB
-	File size is 61.1MB larger than 40MB, will be divided into 6 pieces, 10MB per piece.
+	File size is 61.1MB larger than 40MB, will be divided into 7 pieces, 10MB per piece.
 	10.0MB  [>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>]  100.00%
 	10.0MB  [>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>]  100.00%
 	10.0MB  [>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>]  100.00%
@@ -94,6 +94,7 @@
 	Upload WarlordsofDraenorWarontheHorizonWoWCommunityHypeMontage-Part6.mp4 successed.
 	Cost 139.5 seconds.
 	
-
+2014年7月26日
+	unicode字符没有找到好的解决方法, 考虑是否转到python3下进行开发.
 
 

@@ -97,7 +97,11 @@ class U2b(object):
             return data
         except Exception as e:
             return e
-
+    
+    def get_video_quality(self, quality='best'):
+        '''获取video的下载格式, 默认下载最高质量的视频'''
+        pass
+        
     def set_up_proxy(self, enable=False):
         #开启http的代理模式以供调试使用
         if enable:
@@ -244,7 +248,8 @@ class U2b(object):
         
         # 如果文件大小大于max_file_size限制, 文件将被分割为多个write_file_size大小的文件, 后缀为Part0, Part1, Part2等
         if file_size_mb >= max_file_size:
-            print 'File size is %3.1fMB larger than %dMB, will be divided into %d pieces, %dMB per piece.' % (file_size_mb, max_file_size, int(file_size/write_file_size), write_file_size/1024/1024)
+            print ('File size is %3.1fMB larger than %dMB, will be divided into %d pieces, %dMB per piece.' % 
+                   (file_size_mb, max_file_size, int(file_size/write_file_size)+1, write_file_size/1024/1024))
             for i in range(int(file_size/write_file_size)+1):
                 f = open(file_name+'-Part%d.mp4' % i, 'wb')
                 file_name_list.append(file_name+'-Part%d.mp4' % i)
@@ -389,7 +394,7 @@ class KuaiPan(object):
                       'root': 'root',
                       'overwrite' : forceoverwrite
                       }
-        print 'Uploading %s.' % filelocate
+        print 'Uploading %s' % filelocate
         upload_url = self.get_oauth_url(url, method='POST', parameters=parameters)
         datagen, headers = multipart_encode({filelocate: open(filelocate, 'rb')})
         try:
@@ -461,6 +466,8 @@ def main():
         kuaipan = KuaiPan()
         for file_name in file_name_list:
             kuaipan.upload_file(file_name, True)
+            # 删除完成上传的文件
+            sys.path.remove(file_name)
     stop = time.time()
     print 'Cost', round(stop - start, 2),'seconds.'
 
