@@ -20,6 +20,7 @@ import smtplib
 from email.mime.text import MIMEText
 
 TIME_ZONE = 'Asia/Shanghai'
+RETRY_COUNT = 10
 
 # 配置字符编码为utf-8
 reload(sys)
@@ -42,17 +43,17 @@ phone_number = config.get('phone', 'phone_number')
 phone_password = config.get('phone', 'phone_password')
 
 default_url = r'http://youtube.com/get_video_info?video_id='
-quality_map = {5 : 'FLV 240P', 
-               17 : '3GP 1440',
-               18 : 'MP4 360P',
-               22 : 'MP4 720P',
-               36 : '3GP 240P',
-               43 : 'WebM 360P',
-               82 : 'MP4 360P',
-               83 : 'MP4 240P',
-               84 : 'MP4 720P',
-               85 : 'MP4 1080P',
-               100 : 'WebM 360P'
+quality_map = {5 : '.FLV', # 240P 
+               17 : '.3GP', # 1440P
+               18 : '.MP4', #  360P
+               22 : '.MP4', # 720P
+               36 : '.3GP', # 240P
+               43 : '.WebM', # 360P
+               82 : '.MP4', # 360P
+               83 : '.MP4', # 240P
+               84 : '.MP4', # 720P
+               85 : '.MP4', # 1080P
+               100 : '.WebM' # 360P
                }
 
 class U2b(object):
@@ -97,10 +98,6 @@ class U2b(object):
             return data
         except Exception as e:
             return e
-    
-    def get_video_quality(self, quality='best'):
-        '''获取video的下载格式, 默认下载最高质量的视频'''
-        pass
         
     def set_up_proxy(self, enable=False):
         #开启http的代理模式以供调试使用
@@ -112,38 +109,12 @@ class U2b(object):
             proxy_handler = urllib2.ProxyHandler({})
             opener = urllib2.build_opener(proxy_handler)
             urllib2.install_opener(opener)
-
-#     def get_download_url(self, data):
-#         '''获取视频下载url, 及视频标题'''
-#         if isinstance(data, str):
-#             content = urlparse.parse_qs(data)
-#             
-#             # 判断是否正确获取video_info
-#             if 'status' in content and content['status'] == ['fail']:
-#                 print 'Reason:', content['reason'][0]
-#                 return -1
-#             
-#             # 格式化url_encoded_fmt_stream_map获取各版本视频下载链接
-#             url_encoded_fmt_stream_map = str(content['url_encoded_fmt_stream_map'])
-#             url_map = urlparse.parse_qs(url_encoded_fmt_stream_map)
-#             if 'url' in url_map and 'itag' in url_map:
-#                 url = url_map['url']
-#                 itag = url_map['itag']
-#                 url_itag = dict(zip(itag, url))
-#                 url_itag['title'] = content['title'][0]
-#                 # for key in url_itag:
-#                     # print key, url_itag[key]
-#                 return url_itag
-#             else:
-#                 print 'Bad data, try again.'
                 
     def format_title(self, title):
         '''格式化视频标题, 暂时没有更好的办法处理unicode字符'''
-        len_origin = len(title)
         title = re.sub('[^a-zA-Z0-9]', '', title)
-        len_new = len(title)
-        title = title
-        if title == '' or (len_origin-len_new)>50:
+        len_title = len(title)
+        if title == '' or len_title < 10:
             title = 'Rename-' + time.strftime('%Y%m%d%H%M')
         return title
     
@@ -157,6 +128,7 @@ class U2b(object):
                 return -1
             
             # 格式化url_encoded_fmt_stream_map获取各版本视频下载链接
+            # 返回质量最高的视频下载url
             url_encoded_fmt_stream_map = str(content['url_encoded_fmt_stream_map'])
             url_map = urlparse.parse_qs(url_encoded_fmt_stream_map)
             try:
@@ -164,66 +136,25 @@ class U2b(object):
                     url = url_map['url']
                     itag = url_map['itag']
                     url_itag = dict(zip(itag, url))
-                    url_itag['title'] = content['title'][0]
-                    # for key in url_itag:
-                        # print key, url_itag[key]
-                    return url_itag['22'], url_itag['title']
+                    title = content['title'][0]
+                    best_video_itag = url_map['itag'][0]
+                    video_type = self.quality_map[int(best_video_itag)].lower()
+                    best_url = url_itag[best_video_itag]
+                    return best_url, title, video_type
                 else:
                     print 'Bad data, try again.'
                     return -2
             except:
                 return -2
     
-#     def download_video(self, url, title):
-#         '''下载视频并显示进度
-#         url: 视频下载链接
-#         title: 视频标题
-#         '''
-#         file_name = self.format_title(title) + '.mp4'
-#         headers = {'Accept-Encoding':'gzip,deflate,sdch',
-#                    'Accept-Language':'zh-CN,zh;q=0.8',
-#                    'Connection':'keep-alive',
-#                    'User-Agent':'Chrome/36.0.1985.125'
-#                    #'Mozilla/5.0 (Windows NT 6.1; WOW64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/36.0.1985.125 Safari/537.36'
-#                    }
-#         try:
-#             req = urllib2.Request(url, headers=headers)  
-#             u = urllib2.urlopen(req)
-#         except HTTPError as e:
-#             print e
-#             
-#         f = open(file_name, 'wb')
-#         meta = u.info()
-#         file_size = int(meta.getheaders("Content-Length")[0])
-#         file_size_mb = round(file_size/1024.0/1024.0, 1)
-#         print "Downloading: %s %sMB" % (file_name, file_size_mb)
-#         
-#         file_size_dl = 0
-#         block_sz = 1024 * 512
-#         while True:
-#             buffer_block = u.read(block_sz)
-#             if not buffer_block:
-#                 break
-#         
-#             file_size_dl += len(buffer_block)
-#             f.write(buffer_block)
-#             status = r"%10d" % file_size_dl
-#             complete_percent = int(file_size_dl*50.0/file_size)
-#             status = (str(round(int(status)/1024.0/1024.0, 1)) + 'MB\t' + '[' + '>'*complete_percent 
-#                       + ' '*(50-complete_percent) + ']' + '  %3.2f%%' % (file_size_dl*100.0/file_size))
-#             sys.stdout.write('\r'+status)
-#             sys.stdout.flush()
-#         sys.stdout.write('\n')
-#         f.close()
-#         return file_name
-    
-    def download_video(self, url, title, max_file_size=300, write_file_size=200):
+    def download_video(self, url, title, videotype, max_file_size=300, write_file_size=200):
         '''下载视频并显示进度
         url: 视频下载链接
         title: 视频标题
         '''
         write_file_size = write_file_size*1024*1024
         file_name = self.format_title(title)
+        # 伪装为浏览器访问, 未能解决403问题, 待查
         headers = {'Accept-Encoding':'gzip,deflate,sdch',
                    'Accept-Language':'zh-CN,zh;q=0.8',
                    'Connection':'keep-alive',
@@ -251,8 +182,8 @@ class U2b(object):
             print ('File size is %3.1fMB larger than %dMB, will be divided into %d pieces, %dMB per piece.' % 
                    (file_size_mb, max_file_size, int(file_size/write_file_size)+1, write_file_size/1024/1024))
             for i in range(int(file_size/write_file_size)+1):
-                f = open(file_name+'-Part%d.mp4' % i, 'wb')
-                file_name_list.append(file_name+'-Part%d.mp4' % i)
+                f = open(file_name+'-Part%d' % i+videotype, 'wb')
+                file_name_list.append(file_name+'-Part%d' % i+videotype)
                 while True:
                     buffer_block = u.read(block_sz)
                     if not buffer_block:
@@ -277,7 +208,7 @@ class U2b(object):
         
         # 文件大小小于max_file_size, 下载为一个文件.
         else:
-            f = open(file_name+'.mp4', 'wb')
+            f = open(file_name+videotype, 'wb')
             while True:
                 buffer_block = u.read(block_sz)
                 if not buffer_block:
@@ -292,7 +223,7 @@ class U2b(object):
                 sys.stdout.write('\r'+status)
                 sys.stdout.flush()
             sys.stdout.write('\n')
-            file_name_list.append(file_name+'.mp4')
+            file_name_list.append(file_name+videotype)
             f.close()
         return file_name_list
         
@@ -442,7 +373,8 @@ def main():
     '''主程序'''
     set_timezone(TIME_ZONE)
     start = time.time()
-    count = 10
+    # 重试次数
+    count = 0
     url = sys.argv[1]
     if url == '--upload':
         kuaipan = KuaiPan()
@@ -452,22 +384,24 @@ def main():
         u2b = U2b()
         vid = u2b.get_video_id(url)
         data = u2b.get_video_info(vid)
-        down_url, title = '', ''
+        down_url, title, video_type = '', '', ''
+        if u2b.get_url_title(data) == -1:
+            return False
         while u2b.get_url_title(data) == -2:
             data = u2b.get_video_info(vid)
             if u2b.get_url_title(data) != -2:
-                down_url, title = u2b.get_url_title(data)
+                down_url, title, video_type = u2b.get_url_title(data)
             count += 1
-            if count == 5:
+            if count >= RETRY_COUNT:
                 print 'Retry %d times, exit.' % count
                 return False
-        down_url, title = u2b.get_url_title(data)            
-        file_name_list = u2b.download_video(down_url, title, 300, 10)
+        down_url, title, video_type = u2b.get_url_title(data)            
+        file_name_list = u2b.download_video(down_url, title, video_type, 300, 200)
         kuaipan = KuaiPan()
         for file_name in file_name_list:
             kuaipan.upload_file(file_name, True)
             # 删除完成上传的文件
-            sys.path.remove(file_name)
+            os.remove(file_name)
     stop = time.time()
     print 'Cost', round(stop - start, 2),'seconds.'
 
