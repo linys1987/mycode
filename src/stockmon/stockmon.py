@@ -180,7 +180,7 @@ def main():
 
         if data:
             change_pencent, price_now, stock_name, stock_code, price_yestday, date_now, time_now = format_output(data)
-            ctypes.windll.kernel32.SetConsoleTitleA(stock_name+' '+str(price_now))  # @UndefinedVariable
+            ctypes.windll.kernel32.SetConsoleTitleA(stock_name+' '+str(price_now))
 
             # 格式化输出,待优化
             print '='*44
