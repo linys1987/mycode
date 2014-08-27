@@ -1,4 +1,5 @@
 eclipse.preferences.version=1
+encoding//src/screengrab/screengrab.py=utf-8
 encoding//src/stockmon/stockmon.py=utf-8
 encoding//src/u2b_to_kuaipan/file_merger.py=utf-8
 encoding//src/u2b_to_kuaipan/get_video_info.py=utf-8
